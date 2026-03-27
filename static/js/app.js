@@ -98,6 +98,7 @@ function updateModelSelect() {
   const colorMap = {
     "openai-whisper": "#4f6ef7",
     "faster-whisper": "#10b981",
+    "mlx-whisper":    "#f59e0b",
   };
   const color = colorMap[activeBackend] || "#4f6ef7";
   engineBadge.textContent = info.label;
@@ -289,7 +290,7 @@ async function transcribe(blobOrFile, filename) {
 
   const selectedModel   = modelSelect.value;
   const selectedBackend = activeBackend;
-  const url = `${API_BASE}/api/transcribe?backend=${encodeURIComponent(selectedBackend)}`;
+  const url = `${API_BASE}/api/transcribe?backend=${encodeURIComponent(selectedBackend)}&model=${encodeURIComponent(selectedModel)}`;
 
   try {
     const res = await fetch(url, { method: "POST", body: form });
