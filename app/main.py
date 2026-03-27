@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.routers.transcription import router
 from app.services.whisper_service import whisper_service
 from app.services.faster_whisper_service import faster_whisper_service
+from app.services.mlx_whisper_service import mlx_whisper_service
 from app.config import settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,6 +20,7 @@ async def lifespan(app: FastAPI):
     yield
     whisper_service.unload()
     faster_whisper_service.unload()
+    mlx_whisper_service.unload()
 
 
 app = FastAPI(

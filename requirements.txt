@@ -5,3 +5,4 @@ openai-whisper @ git+https://github.com/openai/whisper.git
 aiofiles==24.1.0
 pydantic-settings==2.7.0
 faster-whisper==1.1.1
+mlx-whisper

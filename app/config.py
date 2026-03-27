@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     # ── faster-whisper ────────────────────────────────────────────────
     faster_whisper_model: str = "large-v3"
 
+    # ── mlx-whisper ───────────────────────────────────────────────────
+    # Short name (resolved via _MLX_MODEL_MAP) or full HF repo ID
+    mlx_whisper_model: str = "large-v3-turbo"
+
     # beam_size: quality vs speed trade-off (1 = fastest, 5 = best quality)
     faster_whisper_beam_size: int = 5
 
