@@ -7,21 +7,24 @@ from fastapi.staticfiles import StaticFiles
 
 from app.routers.transcription import router
 from app.services.whisper_service import whisper_service
+from app.services.faster_whisper_service import faster_whisper_service
+from app.config import settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    whisper_service.load()
+    # Backends use lazy loading — they will load on the first transcription request.
     yield
     whisper_service.unload()
+    faster_whisper_service.unload()
 
 
 app = FastAPI(
     title="Whisper Transcription API",
-    description="Transcrição de áudio para Português do Brasil via OpenAI Whisper",
-    version="1.0.0",
+    description="Transcrição de áudio para Português do Brasil via OpenAI Whisper & faster-whisper",
+    version="2.0.0",
     lifespan=lifespan,
 )
 

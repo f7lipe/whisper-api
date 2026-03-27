@@ -1,52 +1,134 @@
 const API_BASE = "";
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
-const statusBadge  = document.getElementById("statusBadge");
-const statusText   = document.getElementById("statusText");
-const recordBtn    = document.getElementById("recordBtn");
-const recordLabel  = document.getElementById("recordLabel");
-const timerEl      = document.getElementById("timer");
-const timerDisplay = document.getElementById("timerDisplay");
-const visualizer   = document.getElementById("visualizer");
+const statusBadge    = document.getElementById("statusBadge");
+const statusText     = document.getElementById("statusText");
+const engineSelector = document.getElementById("engineSelector");
+const modelSelect    = document.getElementById("modelSelect");
+const engineBadge    = document.getElementById("engineBadge");
+const recordBtn      = document.getElementById("recordBtn");
+const recordLabel    = document.getElementById("recordLabel");
+const timerEl        = document.getElementById("timer");
+const timerDisplay   = document.getElementById("timerDisplay");
+const visualizer     = document.getElementById("visualizer");
 const visualizerIdle = document.getElementById("visualizerIdle");
-const fileInput    = document.getElementById("fileInput");
-const dropZone     = document.getElementById("dropZone");
-const dropContent  = document.getElementById("dropContent");
-const uploadBtn    = document.getElementById("uploadBtn");
-const loading      = document.getElementById("loading");
-const resultCard   = document.getElementById("resultCard");
-const resultText   = document.getElementById("resultText");
-const resultMeta   = document.getElementById("resultMeta");
-const copyBtn      = document.getElementById("copyBtn");
-const clearBtn     = document.getElementById("clearBtn");
-const errorBanner  = document.getElementById("errorBanner");
-const errorMsg     = document.getElementById("errorMsg");
+const fileInput      = document.getElementById("fileInput");
+const dropZone       = document.getElementById("dropZone");
+const dropContent    = document.getElementById("dropContent");
+const uploadBtn      = document.getElementById("uploadBtn");
+const loading        = document.getElementById("loading");
+const resultCard     = document.getElementById("resultCard");
+const resultText     = document.getElementById("resultText");
+const resultMeta     = document.getElementById("resultMeta");
+const copyBtn        = document.getElementById("copyBtn");
+const clearBtn       = document.getElementById("clearBtn");
+const errorBanner    = document.getElementById("errorBanner");
+const errorMsg       = document.getElementById("errorMsg");
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let mediaRecorder = null;
-let audioChunks   = [];
-let timerInterval = null;
+let mediaRecorder  = null;
+let audioChunks    = [];
+let timerInterval  = null;
 let secondsElapsed = 0;
-let audioCtx      = null;
-let analyser      = null;
-let animFrameId   = null;
-let selectedFile  = null;
+let audioCtx       = null;
+let analyser       = null;
+let animFrameId    = null;
+let selectedFile   = null;
+let backendsData   = {};
+let activeBackend  = "openai-whisper";
+
+// ── Backend & model selector ──────────────────────────────────────────────────
+async function loadBackends() {
+  try {
+    const res  = await fetch(`${API_BASE}/api/backends`);
+    backendsData = await res.json();
+    renderEngineSelector();
+  } catch {
+    // If the server is not reachable yet we'll retry with health check
+  }
+}
+
+function renderEngineSelector() {
+  engineSelector.innerHTML = "";
+
+  Object.entries(backendsData).forEach(([key, info]) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id   = `engine-${key}`;
+    btn.className = "engine-btn" + (key === activeBackend ? " active" : "");
+    btn.setAttribute("role", "radio");
+    btn.setAttribute("aria-checked", key === activeBackend ? "true" : "false");
+    btn.innerHTML = `
+      <span class="engine-name">${info.label}</span>
+      <span class="engine-desc">${info.description}</span>
+      <span class="engine-license">${info.license} · ${info.author}</span>
+    `;
+    btn.addEventListener("click", () => selectBackend(key));
+    engineSelector.appendChild(btn);
+  });
+
+  updateModelSelect();
+}
+
+function selectBackend(key) {
+  activeBackend = key;
+
+  engineSelector.querySelectorAll(".engine-btn").forEach((btn) => {
+    const isActive = btn.id === `engine-${key}`;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-checked", isActive ? "true" : "false");
+  });
+
+  updateModelSelect();
+}
+
+function updateModelSelect() {
+  const info = backendsData[activeBackend];
+  if (!info) return;
+
+  modelSelect.innerHTML = "";
+  info.models.forEach((m) => {
+    const opt = document.createElement("option");
+    opt.value = m;
+    opt.textContent = m;
+    if (m === info.default_model) opt.selected = true;
+    modelSelect.appendChild(opt);
+  });
+
+  const colorMap = {
+    "openai-whisper": "#4f6ef7",
+    "faster-whisper": "#10b981",
+  };
+  const color = colorMap[activeBackend] || "#4f6ef7";
+  engineBadge.textContent = info.label;
+  engineBadge.style.setProperty("--badge-color", color);
+}
 
 // ── Health check ──────────────────────────────────────────────────────────────
 async function checkHealth() {
   try {
-    const res = await fetch(`${API_BASE}/api/health`);
+    const res  = await fetch(`${API_BASE}/api/health`);
     const data = await res.json();
-    if (data.model_ready) {
+    // backends shape: { "openai-whisper": { ready: bool }, "faster-whisper": { ready: bool } }
+    const readyList = Object.entries(data.backends || {})
+      .filter(([, v]) => v?.ready)
+      .map(([k]) => k);
+    const anyReady = readyList.length > 0;
+
+    if (anyReady) {
       statusBadge.classList.add("ready");
-      statusText.textContent = "Servidor pronto";
+      statusBadge.classList.remove("error");
+      statusText.textContent = `Prontos: ${readyList.join(", ")}`;
+      if (!Object.keys(backendsData).length) await loadBackends();
     } else {
-      statusText.textContent = "Carregando modelo…";
-      setTimeout(checkHealth, 3000);
+      statusBadge.classList.remove("ready", "error");
+      statusText.textContent = "Nenhum modelo carregado ainda";
+      if (!Object.keys(backendsData).length) await loadBackends();
     }
   } catch {
     statusBadge.classList.add("error");
     statusText.textContent = "Servidor offline";
+    setTimeout(checkHealth, 5000);
   }
 }
 
@@ -77,8 +159,8 @@ function startVisualizer(stream) {
   source.connect(analyser);
 
   const bufferLength = analyser.frequencyBinCount;
-  const dataArray = new Uint8Array(bufferLength);
-  const ctx = visualizer.getContext("2d");
+  const dataArray    = new Uint8Array(bufferLength);
+  const ctx          = visualizer.getContext("2d");
 
   visualizerIdle.style.opacity = "0";
 
@@ -94,7 +176,7 @@ function startVisualizer(stream) {
 
     for (let i = 0; i < bufferLength; i++) {
       const barH = (dataArray[i] / 255) * height;
-      const hue = 200 + (i / bufferLength) * 100;
+      const hue  = 200 + (i / bufferLength) * 100;
       ctx.fillStyle = `hsla(${hue}, 90%, 65%, 0.85)`;
       ctx.beginPath();
       ctx.roundRect(x, height - barH, barW - 1, barH, 2);
@@ -107,7 +189,7 @@ function startVisualizer(stream) {
 
 function stopVisualizer() {
   if (animFrameId) cancelAnimationFrame(animFrameId);
-  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+  if (audioCtx)   { audioCtx.close(); audioCtx = null; }
   const ctx = visualizer.getContext("2d");
   ctx.clearRect(0, 0, visualizer.width, visualizer.height);
   visualizerIdle.style.opacity = "1";
@@ -125,7 +207,6 @@ recordBtn.addEventListener("click", async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     audioChunks = [];
 
-    // Prefer webm/opus; fall back to whatever browser supports
     const mimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg"].find(
       (t) => MediaRecorder.isTypeSupported(t)
     ) || "";
@@ -206,8 +287,12 @@ async function transcribe(blobOrFile, filename) {
   const form = new FormData();
   form.append("file", blobOrFile, filename);
 
+  const selectedModel   = modelSelect.value;
+  const selectedBackend = activeBackend;
+  const url = `${API_BASE}/api/transcribe?backend=${encodeURIComponent(selectedBackend)}`;
+
   try {
-    const res = await fetch(`${API_BASE}/api/transcribe`, { method: "POST", body: form });
+    const res = await fetch(url, { method: "POST", body: form });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: res.statusText }));
@@ -215,7 +300,7 @@ async function transcribe(blobOrFile, filename) {
     }
 
     const data = await res.json();
-    showResult(data);
+    showResult(data, selectedBackend, selectedModel);
   } catch (err) {
     showError(err.message);
   } finally {
@@ -224,19 +309,21 @@ async function transcribe(blobOrFile, filename) {
 }
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
-function showResult({ text, language, duration, segments }) {
+function showResult({ text, language, duration, segments }, backend, model) {
   resultText.textContent = text || "(sem texto detectado)";
+
+  const backendLabel = backendsData[backend]?.label || backend;
 
   const metaParts = [
     `🌐 ${language?.toUpperCase() || "?"}`,
     `⏱ ${duration?.toFixed(2)}s`,
+    `🤖 ${backendLabel} · ${model}`,
     segments ? `📄 ${segments.length} segmento${segments.length !== 1 ? "s" : ""}` : null,
   ].filter(Boolean);
 
   resultMeta.innerHTML = metaParts.map((p) => `<span>${p}</span>`).join("");
   resultCard.classList.remove("hidden");
 
-  // Smooth scroll to result
   setTimeout(() => resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50);
 }
 
@@ -269,4 +356,5 @@ copyBtn.addEventListener("click", async () => {
 clearBtn.addEventListener("click", hideResult);
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+loadBackends();
 checkHealth();

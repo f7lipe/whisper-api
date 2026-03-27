@@ -369,6 +369,131 @@ body {
   font-size: 0.88rem;
 }
 
+/* ── Engine selector card ────────────────────── */
+.engine-card { display: flex; flex-direction: column; gap: 1rem; }
+
+.engine-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.engine-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.engine-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-3));
+  opacity: 0;
+  transition: opacity 0.25s;
+  border-radius: inherit;
+}
+.engine-btn:hover { border-color: var(--border-h); transform: translateY(-1px); }
+.engine-btn.active {
+  border-color: var(--accent-1);
+  background: rgba(79, 110, 247, 0.08);
+  box-shadow: 0 0 0 1px var(--accent-1), 0 4px 16px rgba(79, 110, 247, 0.25);
+}
+/* faster-whisper active gets teal accent */
+#engine-faster-whisper.active {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  box-shadow: 0 0 0 1px #10b981, 0 4px 16px rgba(16, 185, 129, 0.25);
+}
+.engine-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  position: relative;
+}
+.engine-desc {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+  position: relative;
+}
+.engine-license {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  opacity: 0.6;
+  margin-top: 0.25rem;
+  position: relative;
+}
+
+/* ── Model row ───────────────────────────────── */
+.model-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.model-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.select-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 140px;
+}
+.model-select {
+  appearance: none;
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.2s;
+  outline: none;
+}
+.model-select:hover, .model-select:focus { border-color: var(--accent-1); }
+.model-select option { background: #1a1a2e; color: var(--text); }
+.select-arrow {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--text-dim);
+}
+
+.engine-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(from var(--badge-color, #4f6ef7) r g b / 0.15);
+  color: var(--badge-color, #4f6ef7);
+  border: 1px solid rgba(from var(--badge-color, #4f6ef7) r g b / 0.35);
+  white-space: nowrap;
+  transition: color 0.3s, border-color 0.3s, background 0.3s;
+  /* Fallback for browsers that don't support relative color syntax */
+  background: color-mix(in srgb, var(--badge-color, #4f6ef7) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color, #4f6ef7) 35%, transparent);
+}
+
 /* ── Utilities ───────────────────────────────── */
 .hidden { display: none !important; }
 
@@ -376,4 +501,7 @@ body {
   body { padding: 1rem 0.75rem 3rem; }
   .recorder-controls { flex-wrap: wrap; }
   .btn-record { width: 100%; }
+  .engine-selector { grid-template-columns: 1fr; }
+  .model-row { flex-direction: column; align-items: flex-start; }
+  .select-wrapper { width: 100%; }
 }

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Whisper API — Transcrição em Português</title>
-  <meta name="description" content="Transcreva áudio para texto em Português do Brasil usando OpenAI Whisper." />
+  <meta name="description" content="Transcreva áudio para texto em Português do Brasil usando OpenAI Whisper ou faster-whisper." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -40,8 +40,31 @@
 
     <section class="hero">
       <h1>Transcrição de Áudio</h1>
-      <p class="subtitle">Grave do microfone ou envie um arquivo — powered by <strong>OpenAI Whisper turbo</strong></p>
+      <p class="subtitle">Grave do microfone ou envie um arquivo — escolha o backend e o modelo abaixo</p>
     </section>
+
+    <!-- ── Backend & Model selector ───────────────────────────────────────── -->
+    <div class="card engine-card" id="engineCard">
+      <div class="card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 4.93 19.07M4.93 4.93A10 10 0 0 0 19.07 19.07"/><path d="M14.83 9.17a4 4 0 0 0-5.66 5.66"/><path d="M9.17 14.83a4 4 0 0 0 5.66-5.66"/></svg>
+        Motor de Transcrição
+      </div>
+
+      <div class="engine-selector" id="engineSelector" role="radiogroup" aria-label="Selecionar backend">
+        <!-- populated by JS -->
+      </div>
+
+      <div class="model-row">
+        <label class="model-label" for="modelSelect">Modelo</label>
+        <div class="select-wrapper">
+          <select id="modelSelect" class="model-select" aria-label="Selecionar modelo Whisper">
+            <!-- populated by JS -->
+          </select>
+          <svg class="select-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="engine-badge" id="engineBadge"></div>
+      </div>
+    </div>
 
     <!-- Mic recorder card -->
     <div class="card recorder-card">

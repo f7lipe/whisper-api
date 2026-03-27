@@ -9,6 +9,7 @@ import whisper
 
 from app.config import settings
 from app.schemas.transcription import TranscriptionResponse, Segment
+from app.services.base import BaseWhisperService
 
 
 def _create_unverified_opener() -> urllib.request.OpenerDirector:
@@ -24,11 +25,11 @@ def _create_unverified_opener() -> urllib.request.OpenerDirector:
     return urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx))
 
 
-class WhisperService:
+class WhisperService(BaseWhisperService):
     def __init__(self) -> None:
         self._model: whisper.Whisper | None = None
 
-    def load(self) -> None:
+    def load(self, model_name: str) -> None:
         import torch
         if torch.backends.mps.is_available():
             device = "mps"
@@ -36,11 +37,11 @@ class WhisperService:
             device = "cuda"
         else:
             device = "cpu"
-        print(f"[whisper] Loading model '{settings.whisper_model}' on {device.upper()}...")
+        print(f"[whisper] Loading model '{model_name}' on {device.upper()}...")
         opener = _create_unverified_opener()
         urllib.request.install_opener(opener)
         try:
-            self._model = whisper.load_model(settings.whisper_model, device=device)
+            self._model = whisper.load_model(model_name, device=device)
         finally:
             urllib.request.install_opener(urllib.request.build_opener())
         print(f"[whisper] Model ready on {device.upper()}.")
